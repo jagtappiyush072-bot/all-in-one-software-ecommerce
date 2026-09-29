@@ -1,0 +1,276 @@
+// server.js
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const PORT = 5000;
+
+app.use(cors());
+app.use(express.json());
+
+// In-Memory Database Simulation
+let users = [
+  { id: "f1", email: "founder@anglecoding.com", role: "founder" }
+];
+let products = [];
+let orders = [];
+
+// 1. REGISTRATION & SUBSCRIPTION
+app.post('/api/register', (req, res) => {
+  const { email, password, bankAcc, govDoc, initialRole, scanDongle } = req.body;
+  
+  if (!email || !password) return res.status(400).json({ error: "Missing email or password" });
+  
+  // Cyber Virus Detection Simulation
+  let securityStatus = "Clean";
+  if (scanDongle && Math.random() > 0.9) {
+    securityStatus = "Threat Detected - Portable Device Quarantine Flagged";
+    return res.status(403).json({ error: securityStatus });
+  }
+
+  const newUser = {
+    id: 'u_' + Date.now(),
+    email,
+    password,
+    bankAcc,
+    govDoc,
+    role: initialRole || 'buyer', // default role
+    securityStatus
+  };
+
+  users.push(newUser);
+  console.log(`[EMAIL SENT] Welcome to Angle Coding! Referral Code: REF-${newUser.id}`);
+  res.status(201).json({ message: "Registration successful", user: newUser });
+});
+
+// 2. DASHBOARD: PROFILE INTERCHANGE
+app.post('/api/user/switch-profile', (req, res) => {
+  const { userId, targetRole } = req.body;
+  const user = users.find(u => u.id === userId);
+  
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (user.role === 'founder') return res.status(400).json({ error: "Founders cannot switch base roles" });
+  
+  if (targetRole === 'buyer' || targetRole === 'seller') {
+    user.role = targetRole;
+    console.log(`[FOUNDER NOTIFICATION] User ${user.id} switched profile to ${targetRole}`);
+    return res.json({ message: `Successfully switched to ${targetRole} interface`, user });
+  }
+  res.status(400).json({ error: "Invalid role switch selection" });
+});
+
+// 3. SELLER: PRODUCT LISTING
+app.post('/api/products', (req, res) => {
+  const { sellerId, title, price, description } = req.body;
+  const newProduct = {
+    id: 'p_' + Date.now(),
+    sellerId,
+    title,
+    price: parseFloat(price),
+    description,
+    status: 'ready'
+  };
+  products.push(newProduct);
+  res.status(201).json({ message: "Product listed successfully", product: newProduct });
+});
+
+// 4. BUYER: NEGOTIATION & ORDER CONFORMATION
+app.post('/api/orders/negotiate', (req, res) => {
+  const { buyerId, productId, proposedPrice, action } = req.body;
+  const product = products.find(p => p.id === productId);
+  
+  if (!product) return res.status(404).json({ error: "Product not found" });
+
+  if (action === 'confirm') {
+    const finalPrice = proposedPrice || product.price;
+    const order = {
+      orderId: 'ord_' + Date.now(),
+      productId,
+      buyerId,
+      sellerId: product.sellerId,
+      finalPrice,
+      status: "Delivered"
+    };
+    orders.push(order);
+    
+    // Trigger automated email simulation to both parties
+    console.log(`[EMAIL TO BUYER]: Order Confirmed for ${product.title}. Price: $${finalPrice}`);
+    console.log(`[EMAIL TO SELLER]: Order Confirmed. Delivery finalized. Funds processed.`);
+    
+    return res.json({ message: "Congratulations! Order confirmed and delivered.", order });
+  }
+
+  res.json({ message: "Negotiation update logged counter-party notified." });
+});
+
+// 5. FOUNDER & GLOBAL FEEDS
+app.get('/api/admin/audit', (req, res) => {
+  res.json({ totalUsers: users.length, totalProducts: products.length, totalOrders: orders.length });
+});
+
+app.get('/api/products', (req, res) => res.json(products));
+
+app.listen(PORT, () => console.log(`Angle Cod
+// App.js
+import React, { useState, useEffect } from 'react';
+
+export default function App() {
+  // App States
+  const [currentUser, setCurrentUser] = useState({ id: 'u_101', email: 'user@example.com', role: 'buyer' });
+  const [products, setProducts] = useState([]);
+  const [view, setView] = useState('dashboard'); // registration, dashboard, admin
+  
+  // Form States
+  const [regForm, setRegForm] = useState({ email: '', password: '', bankAcc: '', govDoc: '', scanDongle: true });
+  const [prodForm, setProdForm] = useState({ title: '', price: '', description: '' });
+  const [negotiatePrice, setNegotiatePrice] = useState('');
+  const [systemLogs, setSystemLogs] = useState('System initialized. Welcome to Angle Coding.');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    // Simulated fetch - replace with live URL when running backend
+    try {
+      const res = await fetch('http://localhost:5000/api/products');
+      const data = await res.json();
+      setProducts(data);
+    } catch (e) {
+      // Fallback sample data for standalone UI visual test
+      setProducts([{ id: 'p_sample', sellerId: 'u_vendor', title: 'Cyber Shield System', price: 299, description: 'Advanced firewall wrapper' }]);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setSystemLogs("Running portable Wifi & Dongle Cyber Virus Scan...");
+    // Integration Hook: replace endpoint string with active microservice
+    alert("User account parsed. Check mock server log console for incoming automated Email containing unique generation tokens and dynamic referral links.");
+    setView('dashboard');
+  };
+
+  const toggleProfileRole = () => {
+    const nextRole = currentUser.role === 'buyer' ? 'seller' : 'buyer';
+    setCurrentUser({ ...currentUser, role: nextRole });
+    setSystemLogs(`Profile changed. Interchanging workspace view context to: ${nextRole.toUpperCase()}`);
+  };
+
+  const handleAddProduct = (e) => {
+    e.preventDefault();
+    const newProd = {
+      id: 'p_' + Date.now(),
+      sellerId: currentUser.id,
+      title: prodForm.title,
+      price: parseFloat(prodForm.price),
+      description: prodForm.description
+    };
+    setProducts([...products, newProd]);
+    setProdForm({ title: '', price: '', description: '' });
+    setSystemLogs(`Product "${newProd.title}" pushed successfully under Guideline Subscription standard.`);
+  };
+
+  const executeOrder = (product, isNegotiated) => {
+    const finalPrice = isNegotiated ? negotiatePrice : product.price;
+    setSystemLogs(`🎉 Congratulations! Order for "${product.title}" processed at $${finalPrice}. Delivery complete. Receipt confirmation emails transmitted.`);
+    alert(`Order Finalized! Check registration email thread for delivery certificates.`);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-6">
+      {/* Header Bar */}
+      <header className="flex justify-between items-center border-b border-slate-700 pb-4 mb-6">
+        <h1 className="text-2xl font-bold tracking-wider text-emerald-400">ANGLE CODING Portal</h1>
+        <div className="flex gap-4 items-center">
+          <span className="text-sm bg-slate-800 px-3 py-1.5 rounded border border-slate-600">
+            Current Identity: <strong className="text-amber-400 capitalize">{currentUser.role}</strong>
+          </span>
+          {currentUser.role !== 'founder' && (
+            <button onClick={toggleProfileRole} className="bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold py-1.5 px-3 rounded shadow transition">
+              🔄 Switch to {currentUser.role === 'buyer' ? 'Seller' : 'Buyer'}
+            </button>
+          )}
+          <button onClick={() => setView('registration')} className="text-slate-400 hover:text-white text-xs underline">System Onboarding</button>
+        </div>
+      </header>
+
+      {/* Monitor Alert Log Panel */}
+      <div className="mb-6 p-3 bg-black/40 rounded border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+        <strong>Activity Logger:</strong> {systemLogs}
+      </div>
+
+      {/* Main View Router Context */}
+      {view === 'registration' ? (
+        <div className="max-w-md mx-auto bg-slate-800 p-6 rounded-lg border border-slate-700">
+          <h2 className="text-xl font-semibold mb-4 text-center">Step 1: System Enrollment Secure Gateway</h2>
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-xs uppercase text-slate-400 mb-1">Founder / User Email</label>
+              <input type="email" required className="w-full bg-slate-900 p-2 rounded border border-slate-700" placeholder="name@anglecoding.com" />
+            </div>
+            <div>
+              <label className="block text-xs uppercase text-slate-400 mb-1">Bank Settlement Routing Account</label>
+              <input type="text" required className="w-full bg-slate-900 p-2 rounded border border-slate-700" placeholder="IBAN / Account Number Mapping" />
+            </div>
+            <div>
+              <label className="block text-xs uppercase text-slate-400 mb-1">Gov Document Verification Upload</label>
+              <input type="text" required className="w-full bg-slate-900 p-2 rounded border border-slate-700" placeholder="Passport or National ID Token" />
+            </div>
+            <div className="flex items-center gap-2 py-2">
+              <input type="checkbox" defaultChecked id="dongle" />
+              <label htmlFor="dongle" className="text-xs text-amber-300">Run Automated Cyber Virus scan on active Portable Wifi Dongle devices</label>
+            </div>
+            <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-bold py-2 rounded mt-2">
+              Accept Terms & Complete Setup
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Portal Controller Context Column based on Active Identity */}
+          <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+            {currentUser.role === 'seller' ? (
+              <div>
+                <h3 className="text-lg font-medium text-indigo-400 mb-3">6. Seller Category Management</h3>
+                <form onSubmit={handleAddProduct} className="space-y-3">
+                  <input type="text" placeholder="Product Title (+ Symbol Addition)" value={prodForm.title} onChange={e => setProdForm({...prodForm, title: e.target.value})} required className="w-full bg-slate-900 text-sm p-2 rounded border border-slate-700" />
+                  <input type="number" placeholder="Pricing Addition ($)" value={prodForm.price} onChange={e => setProdForm({...prodForm, price: e.target.value})} required className="w-full bg-slate-900 text-sm p-2 rounded border border-slate-700" />
+                  <textarea placeholder="Specification Description" value={prodForm.description} onChange={e => setProdForm({...prodForm, description: e.target.value})} required className="w-full bg-slate-900 text-sm p-2 rounded border border-slate-700 rows-2" />
+                  <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 font-bold py-2 text-xs rounded uppercase tracking-wider">Commit Listing</button>
+                </form>
+              </div>
+            ) : (
+              <div>
+                <h3 className="text-lg font-medium text-emerald-400 mb-2">5. Buyer Workspace Hub</h3>
+                <p className="text-xs text-slate-400 mb-4">Coworker space integration pipeline enabled. Cross-currency engine mapped automatically.</p>
+                <div className="bg-slate-900 p-3 rounded text-xs space-y-2 border border-slate-700">
+                  <span className="font-bold text-slate-300 block">7. Negotiation Channel Framework</span>
+                  <input type="number" placeholder="Propose Counter Offer Amount" value={negotiatePrice} onChange={e => setNegotiatePrice(e.target.value)} className="w-full bg-slate-800 p-2 rounded border border-slate-600 text-slate-200" />
+                  <p className="text-[10px] text-amber-400">Note: Final transaction receipts execute instant delivery and trigger system email payloads.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Product Grid Marketplace Stream View */}
+          <div className="md:col-span-2 bg-slate-800 p-4 rounded-lg border border-slate-700">
+            <h3 className="text-lg font-medium mb-4 flex justify-between items-center">
+              <span>🌐 Global Feed Workspace / Problem Statements</span>
+              <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">{products.length} Mapped Elements</span>
+            </h3>
+            {products.length === 0 ? (
+              <p className="text-slate-500 text-sm">No listings currently live on network nodes.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {products.map(prod => (
+                  <div key={prod.id} className="bg-slate-900 p-4 rounded border border-slate-700 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-slate-200">{prod.title}</h4>
+                        <span className="text-emerald-400 text-sm font-mono font-bold">${prod.price}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mb-4 line-clamp-3">{prod.description}</p>
+                    </div>
+                    {currentUser.role === 'buyer' && (
+                      <div className="space-y-2">
+                        {negotiatePrice && (
+                          <button onClick={() => executeOrder(prod, true)} className="w-full bg-amber-600 hover:bg-amber-500 text-xs py-1.5 rounded font-medium">
